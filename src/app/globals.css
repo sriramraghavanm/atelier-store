@@ -1,26 +1,436 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* ==========================================================================
+   Design tokens
+   --------------------------------------------------------------------------
+   Modelled on the restraint of high-end fashion retail: a single neutral
+   grotesque in two weights, a deliberately small and tightly-led type scale,
+   a near-achromatic palette of pure black/white plus cool greys, 1px hairline
+   rules, square corners, and small page gutters that let full-bleed imagery
+   carry all the visual scale.
+
+   Deliberate overrides of Tailwind defaults are marked [override].
+   ========================================================================== */
+
+@theme {
+  /* ---- Color -------------------------------------------------------------
+     Achromatic by rule. Chroma belongs to product imagery, never to chrome.
+     The only chromatic tokens are the two functional error states. */
+
+  /* Text / foreground */
+  --color-ink: #000000; /* primary text, buttons, rules */
+  --color-ink-strong: #191b1c; /* large editorial type */
+  --color-ink-muted: #4e555a; /* secondary copy, placeholders */
+  --color-ink-subtle: #7e7e7e; /* meta, timestamps */
+  --color-ink-disabled: #b9b9b9;
+
+  /* Background / surface */
+  --color-canvas: #ffffff; /* the page */
+  --color-surface: #f7f7f7; /* banded sections, image backdrops */
+  --color-surface-strong: #f1f1f1; /* hover on surface */
+
+  /* Lines — a hairline system, not a shadow system */
+  --color-line: #d9dce0; /* dividers, table rules, header underline */
+  --color-line-input: #b9b9b9; /* form field borders */
+  --color-line-strong: #000000; /* emphasis rules, outline buttons */
+
+  /* Functional only */
+  --color-critical: #e41b1b;
+  --color-critical-strong: #ab0015;
+
+  /* ---- Type scale --------------------------------------------------------
+     [override] Tailwind's text-* sizes are replaced wholesale. The ceiling is
+     24px: UI type never grows beyond it. Line heights are absolute (not
+     ratios) at ~1.17-1.4, tighter than Tailwind's defaults. Tracking is a
+     near-imperceptible 0.2px on small text — the opposite of the wide-tracked
+     luxury cliche. */
+
+  --text-2xs: 0.625rem; /* 10px — micro labels, legal */
+  --text-2xs--line-height: 0.875rem; /* 14px */
+  --text-2xs--letter-spacing: 0.0125rem;
+
+  --text-xs: 0.75rem; /* 12px — nav, captions, buttons */
+  --text-xs--line-height: 1rem; /* 16px */
+  --text-xs--letter-spacing: 0.0125rem;
+
+  --text-sm: 0.875rem; /* 14px — THE body size */
+  --text-sm--line-height: 1.125rem; /* 18px */
+  --text-sm--letter-spacing: 0.0125rem;
+
+  --text-base: 1rem; /* 16px — long-form body */
+  --text-base--line-height: 1.25rem; /* 20px */
+  --text-base--letter-spacing: 0rem;
+
+  --text-lg: 1.25rem; /* 20px — subheads */
+  --text-lg--line-height: 1.5rem; /* 24px */
+  --text-lg--letter-spacing: 0rem;
+
+  --text-xl: 1.5rem; /* 24px — UI ceiling */
+  --text-xl--line-height: 1.75rem; /* 28px */
+  --text-xl--letter-spacing: 0rem;
+
+  /* Editorial display. Intentionally discontinuous from the UI scale: there
+     is nothing between 24px and 28px+ because the jump is the effect. */
+  --text-display-sm: clamp(1.75rem, 1.1rem + 2.4vw, 2.5rem); /* 28→40 */
+  --text-display-sm--line-height: 1.1;
+  --text-display-sm--letter-spacing: -0.01em;
+
+  --text-display: clamp(2.25rem, 1.3rem + 3.6vw, 4rem); /* 36→64 */
+  --text-display--line-height: 1.06;
+  --text-display--letter-spacing: -0.015em;
+
+  --text-display-lg: clamp(2.75rem, 1rem + 6.4vw, 5.5rem); /* 44→88 */
+  --text-display-lg--line-height: 1.02;
+  --text-display-lg--letter-spacing: -0.02em;
+
+  /* ---- Weight ------------------------------------------------------------
+     Two weights only. Hierarchy comes from case, size and space — never bold. */
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+
+  /* ---- Tracking ----------------------------------------------------------
+     0.2px, expressed as rem so it stays absolute like the source. */
+  --tracking-micro: 0.0125rem;
+
+  /* ---- Spacing -----------------------------------------------------------
+     4px base (Tailwind's default `--spacing` already matches). Gutters are
+     deliberately tight so imagery can run nearly edge to edge. */
+  --spacing-gutter: 1rem; /* 16px, mobile */
+  --spacing-gutter-lg: 1.25rem; /* 20px, desktop */
+  --spacing-section: clamp(2.5rem, 5vw, 3.5rem); /* 40→56 */
+  --spacing-section-lg: clamp(3.5rem, 8vw, 6rem); /* 56→96 */
+
+  /* Fixed chrome heights */
+  --spacing-header: 3.5rem; /* 56px, mobile */
+  --spacing-header-lg: 4.5rem; /* 72px, desktop */
+  --spacing-menubar: 2.9375rem; /* 47px */
+
+  /* ---- Measures ----------------------------------------------------------
+     There is no site-wide max width: layout is full-bleed. These cap text
+     only, so prose never runs the width of a 1600px viewport. */
+  --container-measure: 37.5rem; /* 600px — intros, card copy */
+  --container-prose: 50rem; /* 800px — long-form editorial */
+  --container-form: 28rem; /* 448px — auth, checkout fields */
+
+  /* ---- Radius ------------------------------------------------------------
+     Square is the rule. Pills and circles are permitted only for small
+     controls: chips, swatches, carousel dots, circular icon buttons. */
+  --radius-pill: 9999px;
+
+  /* ---- Imagery -----------------------------------------------------------
+     4:5 portrait is the primary product ratio; 1:1 secondary; 2:1 editorial. */
+  --aspect-product: 4 / 5;
+  --aspect-editorial: 2 / 1;
+  --aspect-portrait: 2 / 3;
+
+  /* ---- Motion ------------------------------------------------------------
+     [override] 200ms default (Tailwind ships 150ms). The symmetric curve is
+     the signature easing for drawers, accordions and menus. */
+  --default-transition-duration: 200ms;
+  --ease-brand: cubic-bezier(0.5, 0, 0.5, 1);
+
+  /* ---- Breakpoints -------------------------------------------------------
+     md/lg/xl already land on 768/1024/1280. [override] 2xl is pulled in to
+     1440 and 3xl added at 1600 to match large-desktop retail layouts. */
+  --breakpoint-2xl: 90rem; /* 1440px */
+  --breakpoint-3xl: 100rem; /* 1600px */
 }
 
+/* Font families reference the next/font variables set in layout.tsx, so they
+   must be inlined rather than re-emitted as theme variables. */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-ui), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* ==========================================================================
+   Base layer
+   ========================================================================== */
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-size-adjust: 100%;
+  }
+
+  /* The canvas is pure white by design — there is no dark theme. Inverted
+     surfaces are opt-in per section (bg-ink + text-canvas), not a global mode. */
+  body {
+    background-color: var(--color-canvas);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-size: var(--text-sm);
+    line-height: var(--text-sm--line-height);
+    letter-spacing: var(--tracking-micro);
+    font-weight: var(--font-weight-normal);
+  }
+
+  /* Square every control, including iOS/Safari defaults. */
+  button,
+  input,
+  select,
+  textarea {
+    border-radius: 0;
+  }
+
+  ::placeholder {
+    color: var(--color-ink-muted);
+  }
+
+  ::selection {
+    background-color: var(--color-ink);
+    color: var(--color-canvas);
+  }
+
+  /* A hairline focus ring, consistent with the border system. */
+  :focus-visible {
+    outline: 1px solid var(--color-ink);
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* ==========================================================================
+   Primitives
+   --------------------------------------------------------------------------
+   Declared with @utility so they compose with Tailwind variants
+   (`md:`, `hover:`, `focus-visible:`) and can be used from plain markup as
+   well as from the React components in src/components/ui.
+   ========================================================================== */
+
+/* ---- Layout ---- */
+
+@utility gutter {
+  padding-inline: var(--spacing-gutter);
+  @media (min-width: 64rem) {
+    padding-inline: var(--spacing-gutter-lg);
+  }
+}
+
+@utility section-y {
+  padding-block: var(--spacing-section);
+}
+
+@utility section-y-lg {
+  padding-block: var(--spacing-section-lg);
+}
+
+/* Centred text measure. */
+@utility measure {
+  max-width: var(--container-measure);
+  margin-inline: auto;
+}
+
+@utility measure-prose {
+  max-width: var(--container-prose);
+  margin-inline: auto;
+}
+
+/* 12-column base grid for editorial composition. */
+@utility grid-base {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 1.25rem;
+}
+
+/* Product listing: 2-up on phones, 4-up from desktop. */
+@utility grid-products {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.25rem 0.5rem;
+  @media (min-width: 64rem) {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1.25rem;
+  }
+}
+
+/* ---- Typography ---- */
+
+/* Uppercase micro-label: nav items, eyebrows, button text, field labels. */
+@utility label {
+  font-size: var(--text-2xs);
+  line-height: var(--text-2xs--line-height);
+  letter-spacing: var(--tracking-micro);
+  font-weight: var(--font-weight-medium);
+  text-transform: uppercase;
+}
+
+@utility label-sm {
+  font-size: var(--text-xs);
+  line-height: var(--text-xs--line-height);
+  letter-spacing: var(--tracking-micro);
+  font-weight: var(--font-weight-medium);
+  text-transform: uppercase;
+}
+
+/* ---- Links ----
+   Underlined, offset just clear of the baseline. Underline is the only link
+   affordance: links are never coloured. */
+
+@utility link {
+  color: var(--color-ink);
+  text-decoration-line: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2.25px;
+  transition: opacity var(--default-transition-duration) var(--ease-brand);
+
+  &:hover {
+    opacity: 0.6;
+  }
+}
+
+/* Reveals its underline on hover — for nav, where a persistent rule is noise. */
+@utility link-quiet {
+  color: var(--color-ink);
+  text-decoration-line: none;
+  text-underline-offset: 2.25px;
+
+  &:hover {
+    text-decoration-line: underline;
+    text-decoration-thickness: 1px;
+  }
+}
+
+/* ---- Buttons ----
+   Square, 1px-bordered, uppercase micro-type, generous height. Full-width is
+   the common case on mobile; `btn-auto` opts out. */
+
+@utility btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 3.125rem; /* 50px */
+  padding-inline: 2rem;
+  padding-block: 0.875rem;
+  border: 1px solid transparent;
+  border-radius: 0;
+  font-size: var(--text-xs);
+  line-height: var(--text-xs--line-height);
+  letter-spacing: var(--tracking-micro);
+  font-weight: var(--font-weight-medium);
+  text-transform: uppercase;
+  text-align: center;
+  cursor: pointer;
+  transition:
+    background-color var(--default-transition-duration) var(--ease-brand),
+    color var(--default-transition-duration) var(--ease-brand),
+    border-color var(--default-transition-duration) var(--ease-brand);
+
+  &:disabled {
+    cursor: not-allowed;
+    color: var(--color-ink-disabled);
+    border-color: var(--color-line);
+    background-color: transparent;
+  }
+}
+
+@utility btn-auto {
+  width: auto;
+}
+
+@utility btn-sm {
+  min-height: 2.5rem; /* 40px */
+  padding-inline: 1.25rem;
+  padding-block: 0.625rem;
+}
+
+@utility btn-solid {
+  background-color: var(--color-ink);
+  border-color: var(--color-ink);
+  color: var(--color-canvas);
+
+  &:hover:not(:disabled) {
+    background-color: transparent;
+    color: var(--color-ink);
+  }
+}
+
+@utility btn-outline {
+  background-color: transparent;
+  border-color: var(--color-ink);
+  color: var(--color-ink);
+
+  &:hover:not(:disabled) {
+    background-color: var(--color-ink);
+    color: var(--color-canvas);
+  }
+}
+
+/* For use over imagery or on an inverted (bg-ink) section. */
+@utility btn-invert {
+  background-color: transparent;
+  border-color: var(--color-canvas);
+  color: var(--color-canvas);
+
+  &:hover:not(:disabled) {
+    background-color: var(--color-canvas);
+    color: var(--color-ink);
+  }
+}
+
+/* Chromeless — for tertiary actions inside dense UI. */
+@utility btn-quiet {
+  background-color: transparent;
+  border-color: var(--color-line);
+  color: var(--color-ink);
+
+  &:hover:not(:disabled) {
+    border-color: var(--color-ink);
+  }
+}
+
+/* ---- Borders & fields ---- */
+
+@utility rule {
+  border: 0;
+  border-top: 1px solid var(--color-line);
+}
+
+@utility field {
+  width: 100%;
+  min-height: 3.125rem;
+  padding-inline: 0.875rem;
+  border: 1px solid var(--color-line-input);
+  border-radius: 0;
+  background-color: var(--color-canvas);
+  font-size: var(--text-sm);
+  line-height: var(--text-sm--line-height);
+
+  &:focus {
+    outline: none;
+    border-color: var(--color-ink);
+  }
+
+  &[aria-invalid="true"] {
+    border-color: var(--color-critical);
+  }
+}
+
+/* ---- Media ----
+   Fixed-ratio frame; the image inside covers it. Prevents layout shift and
+   keeps every tile in a grid optically identical. */
+
+@utility frame {
+  position: relative;
+  overflow: hidden;
+  background-color: var(--color-surface);
+
+  & > img,
+  & > video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+  }
 }

@@ -1,69 +1,213 @@
 import Image from "next/image";
+import type { Metadata } from "next";
 
-export default function Home() {
+import { CollectionCard } from "@/components/collection-card";
+import { ProductCard } from "@/components/product-card";
+import { SiteFooter } from "@/components/site-footer";
+import { SiteHeader } from "@/components/site-header";
+import {
+  Button,
+  ButtonLink,
+  Container,
+  Display,
+  Grid,
+  Label,
+  Section,
+  Stack,
+  TextLink,
+} from "@/components/ui";
+import {
+  campaign,
+  collections,
+  editorial,
+  featured,
+  services,
+} from "@/data/catalog";
+
+export const metadata: Metadata = {
+  title: "Atelier — Autumn / Winter 2026",
+  description:
+    "Outerwear, tailoring and knitwear. Complimentary delivery and thirty-day returns.",
+};
+
+export default function HomePage() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
+    <>
+      <SiteHeader />
+
+      <main>
+        {/* ---------------------------------------------------------- Hero
+            Full-bleed and viewport-tall: the imagery carries the scale, and the
+            type over it stays small. A scrim keeps the copy legible whatever
+            the photograph does. */}
+        <section className="relative h-[82svh] min-h-125 lg:h-[94svh]">
+          <Image
+            src={campaign.image}
+            alt={campaign.alt}
+            fill
+            priority
+            sizes="100vw"
+            className="object-cover"
+          />
+          <div
+            aria-hidden
+            className="absolute inset-0 bg-gradient-to-t from-ink/60 via-ink/15 to-transparent"
+          />
+          <Container className="absolute inset-x-0 bottom-0 pb-10 lg:pb-16">
+            <Stack gap="5" className="max-w-2xl text-canvas">
+              <Label>{campaign.season}</Label>
+              <Display as="h1" size="lg">
+                {campaign.headline}
+              </Display>
+              <p className="text-base max-w-md">{campaign.standfirst}</p>
+              <div>
+                <ButtonLink href={campaign.cta.href} variant="invert">
+                  {campaign.cta.label}
+                </ButtonLink>
+              </div>
+            </Stack>
+          </Container>
+        </section>
+
+        {/* --------------------------------------------------- Collections */}
+        <Section size="lg">
+          <Container>
+            <Stack gap="6">
+              <div className="flex items-end justify-between gap-4">
+                <Label as="h2" size="sm">
+                  Collections
+                </Label>
+                <TextLink href="/collections" className="label">
+                  View all
+                </TextLink>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                {collections.map((collection) => (
+                  <CollectionCard key={collection.id} collection={collection} />
+                ))}
+              </div>
+            </Stack>
+          </Container>
+        </Section>
+
+        {/* ------------------------------------------------------ Featured
+            2-up on phones, 4-up from desktop, via the `grid-products`
+            primitive. The first four images are eager so the fold is sharp. */}
+        <Section>
+          <Container>
+            <Stack gap="6">
+              <div className="flex items-end justify-between gap-4">
+                <Label as="h2" size="sm">
+                  New this week
+                </Label>
+                <TextLink href="/collections/new-in" className="label">
+                  View all
+                </TextLink>
+              </div>
+              <Grid variant="products">
+                {featured.map((product, i) => (
+                  <ProductCard
+                    key={product.id}
+                    product={product}
+                    priority={i < 2}
+                  />
+                ))}
+              </Grid>
+            </Stack>
+          </Container>
+        </Section>
+
+        {/* ------------------------------------------------------ Editorial
+            Half image, half text. Stacks to a single column on phones, with
+            the image first so the section still opens on a picture. */}
+        <Section size="lg" className="bg-surface">
+          <Container>
+            <div className="grid grid-cols-1 lg:grid-cols-2 items-center gap-8 lg:gap-16">
+              <div className="relative aspect-portrait lg:aspect-product">
+                <Image
+                  src={editorial.image}
+                  alt={editorial.alt}
+                  fill
+                  sizes="(min-width: 1024px) 50vw, 100vw"
+                  className="object-cover"
+                />
+              </div>
+              <Stack gap="5" className="lg:max-w-md">
+                <Label>{editorial.eyebrow}</Label>
+                <Display as="h2" size="sm">
+                  {editorial.title}
+                </Display>
+                <p className="text-base text-ink-muted">{editorial.body}</p>
+                <div>
+                  <ButtonLink href={editorial.cta.href} variant="outline">
+                    {editorial.cta.label}
+                  </ButtonLink>
+                </div>
+              </Stack>
+            </div>
+          </Container>
+        </Section>
+
+        {/* ------------------------------------------------------- Services
+            Hairline-separated, the way a retail assurance row reads in print. */}
+        <Section>
+          <Container>
+            <ul className="grid grid-cols-1 md:grid-cols-3 border-t border-line">
+              {services.map((service) => (
+                <li
+                  key={service.title}
+                  className="border-b border-line md:border-b-0 md:border-r md:last:border-r-0 py-8 md:px-6 md:first:pl-0 md:last:pr-0"
+                >
+                  <Stack gap="2">
+                    <Label as="h3" size="sm">
+                      {service.title}
+                    </Label>
+                    <p className="text-sm text-ink-muted">{service.body}</p>
+                  </Stack>
+                </li>
+              ))}
+            </ul>
+          </Container>
+        </Section>
+
+        {/* ----------------------------------------------------- Newsletter */}
+        <Section size="lg" className="bg-ink text-canvas">
+          <Container width="measure">
+            <Stack gap="5" align="center">
+              <Label>Stay in touch</Label>
+              <Display as="h2" size="sm">
+                Collection previews, first
+              </Display>
+              <p className="text-sm">
+                Occasional letters on new arrivals and private sale access.
+              </p>
+              <form
+                className="flex flex-col sm:flex-row gap-3 w-full max-w-md pt-2"
+                action="/newsletter"
+              >
+                <label htmlFor="newsletter-email" className="sr-only">
+                  Email address
+                </label>
+                <input
+                  id="newsletter-email"
+                  name="email"
+                  type="email"
+                  required
+                  placeholder="Email address"
+                  className="field bg-canvas text-ink flex-1"
+                />
+                {/* `invert` because a solid (black) button would disappear
+                    into this section. Full width on phones, auto from sm. */}
+                <Button type="submit" variant="invert" className="sm:btn-auto">
+                  Sign up
+                </Button>
+              </form>
+            </Stack>
+          </Container>
+        </Section>
       </main>
-    </div>
+
+      <SiteFooter />
+    </>
   );
 }

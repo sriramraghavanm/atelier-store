@@ -1,36 +1,105 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# atelier-store
 
-## Getting Started
+Next.js eCommerce application skeleton. This is scaffolding only — no storefront,
+cart, checkout, payments or auth UI yet.
 
-First, run the development server:
+## Stack
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+| Concern  | Choice |
+| -------- | ------ |
+| Framework | Next.js 16 (App Router, Turbopack) + React 19 |
+| Language | TypeScript (strict) |
+| Styling | Tailwind CSS v4 |
+| Auth | Better Auth |
+| ORM | Drizzle ORM + drizzle-kit |
+| Database | Postgres on Neon (`@neondatabase/serverless`, HTTP driver) |
+
+## Setup
+
+1. Install dependencies:
+
+   ```bash
+   npm install
+   ```
+
+2. Create a Neon project and copy the **pooled** connection string.
+
+3. Copy the env template and fill it in:
+
+   ```bash
+   cp .env.example .env.local
+   ```
+
+   - `DATABASE_URL` — Neon pooled connection string.
+   - `BETTER_AUTH_SECRET` — `openssl rand -base64 32`.
+   - `BETTER_AUTH_URL` / `NEXT_PUBLIC_APP_URL` — the app's origin.
+
+4. Create the Better Auth tables:
+
+   ```bash
+   npm run db:generate   # write migration SQL to ./drizzle
+   npm run db:migrate    # apply it to Neon
+   ```
+
+5. Run the app:
+
+   ```bash
+   npm run dev
+   ```
+
+   `GET /api/auth/ok` should return `{"ok":true}`.
+
+## Scripts
+
+| Script | Purpose |
+| ------ | ------- |
+| `npm run dev` | Dev server |
+| `npm run build` / `npm start` | Production build / serve |
+| `npm run lint` | ESLint |
+| `npm run typecheck` | `tsc --noEmit` |
+| `npm run db:generate` | Generate migration SQL from the Drizzle schema |
+| `npm run db:migrate` | Apply migrations |
+| `npm run db:push` | Push schema directly (dev only, no migration files) |
+| `npm run db:studio` | Drizzle Studio |
+
+## Layout
+
+```
+src/
+  app/
+    api/auth/[...all]/route.ts   Better Auth request handler
+    layout.tsx, page.tsx         default create-next-app pages
+  db/
+    index.ts                     Drizzle client over the Neon HTTP driver
+    schema/
+      index.ts                   schema barrel — add new tables here
+      auth.ts                    generated Better Auth tables
+  lib/
+    auth.ts                      Better Auth server instance
+    auth-client.ts               Better Auth browser client
+    env.ts                       required-env accessor
+drizzle.config.ts                drizzle-kit config
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Notes
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- **Auth tables are generated.** `src/db/schema/auth.ts` comes from the Better
+  Auth CLI. After changing options or plugins in `src/lib/auth.ts`, re-run:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+  ```bash
+  npx @better-auth/cli generate --config src/lib/auth.ts --output src/db/schema/auth.ts
+  ```
 
-## Learn More
+  then `npm run db:generate && npm run db:migrate`.
 
-To learn more about Next.js, take a look at the following resources:
+- **Transactions are off.** The Neon HTTP driver doesn't support them, so the
+  Drizzle adapter runs operations sequentially (`transaction: false`). Switch to
+  the WebSocket driver (`drizzle-orm/neon-serverless` + `Pool`) if you need them.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- **Email/password is enabled but has no UI or email sending.** Sign-up and
+  sign-in endpoints exist under `/api/auth/*`; no pages, forms, verification
+  emails or social providers are wired up.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- **`npm audit` reports 5 high-severity issues.** All are dev-only, via
+  `eslint-config-next` → `fast-glob` → `braces`. Fixing them means downgrading
+  `eslint-config-next` to v14, so they're left as-is.
