@@ -16,13 +16,11 @@ import {
   Stack,
   TextLink,
 } from "@/components/ui";
+import { campaign, editorial, services } from "@/data/site";
 import {
-  campaign,
-  collections,
-  editorial,
-  featured,
-  services,
-} from "@/data/catalog";
+  getFeaturedCollections,
+  getFeaturedProducts,
+} from "@/lib/catalog-queries";
 
 export const metadata: Metadata = {
   title: "Atelier — Autumn / Winter 2026",
@@ -30,7 +28,14 @@ export const metadata: Metadata = {
     "Outerwear, tailoring and knitwear. Complimentary delivery and thirty-day returns.",
 };
 
-export default function HomePage() {
+export default async function HomePage() {
+  // Both reads are `use cache` scopes, so the whole page still prerenders into
+  // the static shell rather than becoming a request-time render.
+  const [collections, featured] = await Promise.all([
+    getFeaturedCollections(),
+    getFeaturedProducts(),
+  ]);
+
   return (
     <>
       <SiteHeader />

@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { Frame, Stack } from "@/components/ui";
-import { formatPrice, type Product } from "@/data/catalog";
+import { formatPrice, type Product } from "@/lib/catalog";
 
 /**
  * Product tile: 4:5 media, centred copy beneath, generous trailing space so the

@@ -1,4 +1,4 @@
-import { stockLabel, type Product } from "@/data/catalog";
+import { stockLabel, type Product } from "@/lib/catalog";
 import { cn } from "@/lib/cn";
 
 /**
