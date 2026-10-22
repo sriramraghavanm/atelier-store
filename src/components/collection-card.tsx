@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { Frame, Label, Stack } from "@/components/ui";
-import { type Collection } from "@/data/catalog";
+import { type Collection } from "@/lib/catalog";
 
 /**
  * Collection tile: taller 2:3 media than a product tile, so a row of three
@@ -25,7 +25,9 @@ export function CollectionCard({ collection }: { collection: Collection }) {
           <Label as="h3" size="sm">
             {collection.name}
           </Label>
-          <p className="text-sm text-ink-muted">{collection.caption}</p>
+          {collection.caption ? (
+            <p className="text-sm text-ink-muted">{collection.caption}</p>
+          ) : null}
           <span className="label group-hover:underline underline-offset-2">
             Discover
           </span>

@@ -12,8 +12,9 @@ What exists: the design system, a marketing homepage (`/`), and product detail p
 payments, search, account, and any auth UI — the nav, footer, breadcrumb and category
 links all point at routes that are not built yet, so they 404.
 
-There is no products table. Both pages read static sample data from `src/data/catalog.ts`,
-whose exported types are the shape real queries should return. "Add to bag" and
+Both pages read the catalogue out of Postgres — see **Database conventions** below. Page copy
+that is not catalogue data (the campaign block, the editorial block, the services row and
+the navigation) is still a static module, `src/data/site.ts`. "Add to bag" and
 "Add to wishlist" are inert buttons; no cart exists.
 
 ## Commands
@@ -28,6 +29,7 @@ npm run db:generate  # schema -> SQL migration in ./drizzle
 npm run db:migrate   # apply migrations to Neon
 npm run db:push      # push schema directly, no migration files (dev only)
 npm run db:studio    # Drizzle Studio
+npm run db:seed      # upsert the sample catalogue (tsx, loads .env itself)
 ```
 
 No test framework is installed — there is no test command to run. Pick one and
@@ -105,7 +107,7 @@ to our own bucket.
 
 ## Architecture
 
-Three wiring layers, each with one entry point:
+Four layers, each with one entry point:
 
 - `src/lib/env.ts` — the only place env vars are read. Getters throw on missing values, so
   misconfiguration fails at startup rather than mid-request. Add new required vars here and
@@ -115,6 +117,8 @@ Three wiring layers, each with one entry point:
 - `src/lib/auth.ts` — the Better Auth server instance, consumed by
   `src/app/api/auth/[...all]/route.ts` (catch-all `GET`/`POST`) and mirrored client-side by
   `src/lib/auth-client.ts`.
+- `src/lib/catalog-queries.ts` — every catalogue read. Pages import from here, never from
+  `@/db` directly.
 
 Two constraints worth knowing before writing data code:
 
@@ -140,12 +144,55 @@ Two constraints worth knowing before writing data code:
 New application tables go in their own file under `src/db/schema/` and get re-exported from
 `src/db/schema/index.ts`, which is both the drizzle-kit entry point and what `db` is typed against.
 
+## Database conventions
+
+Established while building the catalogue (`src/db/schema/catalog.ts`). Apply them to new
+tables rather than re-deciding.
+
+- **Naming follows `auth.ts`:** singular lowercase table names and exports (`product`, not
+  `products`), camelCase TS properties with the snake_case column name passed explicitly.
+  No `casing` option is configured, so that string is load-bearing.
+- **Ids are `uuid("id").primaryKey().defaultRandom()`** so the database owns them. The
+  `text` ids in `auth.ts` are the exception — Better Auth generates those itself. A
+  human-readable `slug` is a separate unique column, never the primary key, because slugs
+  get edited.
+- **Money is integer minor units** (`price_cents`). No floats, no `numeric`.
+- **Never store what can be derived.** Stock is `stock_quantity` + `low_stock_threshold`
+  only; `stockStateFor` in `src/lib/catalog.ts` derives the in/low/out state, so the two
+  cannot contradict each other. Same for URLs — `href` is built in the query layer, not
+  held in a column.
+- **`jsonb` for ordered free text nothing queries into** (`product.composition`). A child
+  table only when its rows need columns of their own, as `product_image` does for alt text
+  and position.
+- **`on delete set null` where the child outlives the parent** — deleting a category must
+  not take its products with it. Cascade only for rows that are meaningless alone.
+
+**Reads go through one query module per domain**, `src/lib/catalog-queries.ts` for the
+catalogue; pages never import `@/db`. View types and pure helpers sit apart in
+`src/lib/catalog.ts`, which imports nothing from `@/db` — `ProductCard` imports
+`formatPrice`, and a database import there would reach every component that touches it.
+
+**Every read is a `use cache` scope with an explicit `cacheLife`.** Not a preference:
+`ensureStatic = "navigation"` fails the build on an uncached database call even inside
+`<Suspense>`, and on any cache life whose `expire` is under five minutes. `hours` suits
+catalogue data. Tag reads with `cacheTag` so a later mutation can `updateTag` them.
+
+Scripts that run outside Next cannot invalidate those caches, so **restart the dev server
+after `npm run db:seed`** or pages may serve the previous rows for up to an hour.
+
+An unreachable database is an error everywhere, including during `next build`:
+`generateStaticParams` on `/products/[slug]` queries the catalogue and
+`ensureStatic = "navigation"` needs at least one param, so a build without a reachable,
+non-empty catalogue fails rather than shipping an empty storefront.
+
 ## Env
 
-`.env.local` is gitignored and holds a working dev `BETTER_AUTH_SECRET`, but `DATABASE_URL` is
-still a placeholder — database commands fail until a real Neon **pooled** connection string is
-filled in. `.env.example` documents all four keys. `drizzle.config.ts` loads `.env`/`.env.local`
-itself via dotenv, since drizzle-kit runs outside Next.
+`.env.local` is gitignored and holds the working dev `BETTER_AUTH_SECRET` and a real Neon
+**pooled** `DATABASE_URL`. Both are required: `npm run dev` and `npm run build` fail without
+a reachable database, as do the `db:*` commands. `.env.local` overrides `.env`, so a stale
+placeholder there shadows a real value in `.env` — check it first when a connection fails for
+no obvious reason. `.env.example` documents all four keys. `drizzle.config.ts` and
+`src/db/seed.ts` both load `.env`/`.env.local` via dotenv, since they run outside Next.
 
 ## Known noise
 

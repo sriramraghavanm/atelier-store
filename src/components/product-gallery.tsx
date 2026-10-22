@@ -1,7 +1,7 @@
 import Image from "next/image";
 
 import { Frame } from "@/components/ui";
-import type { Product } from "@/data/catalog";
+import type { Product } from "@/lib/catalog";
 
 /**
  * Product imagery, full-bleed and large.

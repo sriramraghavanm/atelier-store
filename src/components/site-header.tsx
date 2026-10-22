@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 import { Container, TextLink } from "@/components/ui";
-import { primaryNav } from "@/data/catalog";
+import { primaryNav } from "@/data/site";
 
 /**
  * Sticky header: fixed heights from the token scale, a single hairline rule at

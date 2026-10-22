@@ -1,7 +1,7 @@
 import { cacheLife } from "next/cache";
 
 import { Container, Divider, Label, Stack, TextLink } from "@/components/ui";
-import { footerNav } from "@/data/catalog";
+import { footerNav } from "@/data/site";
 
 /**
  * Cached because of the copyright year: with `cacheComponents` enabled, reading

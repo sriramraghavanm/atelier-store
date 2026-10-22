@@ -17,12 +17,12 @@ import {
   Stack,
   TextLink,
 } from "@/components/ui";
+import { formatPrice } from "@/lib/catalog";
 import {
-  formatPrice,
   getProduct,
+  getProductSlugs,
   getRelatedProducts,
-  products,
-} from "@/data/catalog";
+} from "@/lib/catalog-queries";
 
 /**
  * Partial Prefetching would otherwise flush a prerendered shell for an unlisted
@@ -34,19 +34,24 @@ import {
 export const ensureStatic = "navigation";
 
 /**
- * Every sample product is prerendered. `dynamicParams` is not supported under
- * `cacheComponents`, so an unknown slug is rendered on request and 404s via
- * `notFound()` below.
+ * Every product in the database is prerendered. `dynamicParams` is not supported
+ * under `cacheComponents`, so an unknown slug is rendered on request and 404s
+ * via `notFound()` below.
+ *
+ * `ensureStatic = "navigation"` requires at least one complete param set, so an
+ * unreachable or empty catalogue fails the build here. That is deliberate: a
+ * storefront with no products is not something to paper over.
  */
 export async function generateStaticParams() {
-  return products.map((product) => ({ slug: product.id }));
+  const slugs = await getProductSlugs();
+  return slugs.map((slug) => ({ slug }));
 }
 
 export async function generateMetadata({
   params,
 }: PageProps<"/products/[slug]">): Promise<Metadata> {
   const { slug } = await params;
-  const product = getProduct(slug);
+  const product = await getProduct(slug);
   if (!product) return { title: "Product not found — Atelier" };
 
   return {
@@ -59,11 +64,18 @@ export default async function ProductPage({
   params,
 }: PageProps<"/products/[slug]">) {
   const { slug } = await params;
-  const product = getProduct(slug);
+  const product = await getProduct(slug);
   if (!product) notFound();
 
-  const related = getRelatedProducts(slug);
+  const related = await getRelatedProducts(slug);
   const soldOut = product.stock === "out_of_stock";
+  // A product keeps its page when its category is deleted, so fall back to the
+  // collections index rather than leaving the breadcrumb and the related rail
+  // pointing nowhere.
+  const category = product.category ?? {
+    name: "All collections",
+    href: "/collections",
+  };
 
   return (
     <>
@@ -79,8 +91,8 @@ export default async function ProductPage({
             </li>
             <li aria-hidden>/</li>
             <li>
-              <TextLink href={product.category.href} quiet>
-                {product.category.name}
+              <TextLink href={category.href} quiet>
+                {category.name}
               </TextLink>
             </li>
             <li aria-hidden>/</li>
@@ -100,11 +112,11 @@ export default async function ProductPage({
               <Stack gap="5" className="lg:max-w-md">
                 <Stack gap="3">
                   <TextLink
-                    href={product.category.href}
+                    href={category.href}
                     quiet
                     className="label text-ink-muted"
                   >
-                    {product.category.name}
+                    {category.name}
                   </TextLink>
                   <h1 className="text-xl font-medium">{product.name}</h1>
                   <p className="text-base">{formatPrice(product.priceCents)}</p>
@@ -165,8 +177,8 @@ export default async function ProductPage({
                 <Label as="h2" size="sm">
                   You may also like
                 </Label>
-                <TextLink href={product.category.href} className="label">
-                  More {product.category.name}
+                <TextLink href={category.href} className="label">
+                  More {category.name}
                 </TextLink>
               </div>
               <Divider />
