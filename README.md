@@ -62,6 +62,7 @@ cart, checkout, payments or auth UI yet.
 | `npm run db:push` | Push schema directly (dev only, no migration files) |
 | `npm run db:studio` | Drizzle Studio |
 | `npm run test:studio-security` | Studio origin security regression tests |
+| `npm run test:auth-security` | Auth rate-limit security regression tests |
 
 Studio is pinned to `drizzle-kit@0.31.11` with a local security patch applied on
 install and before `db:studio` starts. Its SQL server accepts only the exact
@@ -71,6 +72,16 @@ The patch covers the CLI and both API bundles, and fails on unexpected versions
 or code so upgrades require a security recheck. After installing with
 `--ignore-scripts`, run `node scripts/patch-drizzle-studio.mjs` before invoking
 Studio directly through `npx` or the API.
+
+## Auth rate limiting
+
+No trusted ingress is configured, so Better Auth ignores IP headers and uses a
+shared bucket per auth endpoint in production (sign-in allows 3 attempts per
+10 seconds). All clients share these limits within each server process, and
+session records do not store a claimed IP. Limits are in memory and reset on
+restart; multiple processes have separate buckets. Per-client limits require a
+verified ingress that overwrites the selected IP header and prevents direct
+access to the Next.js server before configuring Better Auth to trust that header.
 
 ## Layout
 

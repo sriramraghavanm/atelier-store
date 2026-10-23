@@ -14,6 +14,7 @@
     "db:push": "drizzle-kit push",
     "db:studio": "node scripts/patch-drizzle-studio.mjs && drizzle-kit studio",
     "test:studio-security": "node --test scripts/studio-security.test.mjs",
+    "test:auth-security": "node --import tsx --test scripts/auth-security.test.mjs",
     "db:seed": "tsx src/db/seed.ts"
   },
   "dependencies": {
