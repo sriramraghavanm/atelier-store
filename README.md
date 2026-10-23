@@ -61,6 +61,16 @@ cart, checkout, payments or auth UI yet.
 | `npm run db:migrate` | Apply migrations |
 | `npm run db:push` | Push schema directly (dev only, no migration files) |
 | `npm run db:studio` | Drizzle Studio |
+| `npm run test:studio-security` | Studio origin security regression tests |
+
+Studio is pinned to `drizzle-kit@0.31.11` with a local security patch applied on
+install and before `db:studio` starts. Its SQL server accepts only the exact
+`https://local.drizzle.studio` browser origin; missing, opaque, and other origins
+receive HTTP 403 before any database operation. Keep the default loopback binding.
+The patch covers the CLI and both API bundles, and fails on unexpected versions
+or code so upgrades require a security recheck. After installing with
+`--ignore-scripts`, run `node scripts/patch-drizzle-studio.mjs` before invoking
+Studio directly through `npx` or the API.
 
 ## Layout
 
