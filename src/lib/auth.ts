@@ -14,6 +14,13 @@ export const auth = betterAuth({
   }),
   secret: env.betterAuthSecret,
   baseURL: env.appUrl,
+  advanced: {
+    ipAddress: {
+      // No trusted ingress is configured. Ignore client-supplied IP headers so
+      // Better Auth uses its shared per-path rate-limit bucket in production.
+      ipAddressHeaders: [],
+    },
+  },
   // Providers, email verification and plugins are intentionally left unset.
   emailAndPassword: {
     enabled: true,
